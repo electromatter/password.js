@@ -24,13 +24,12 @@ function mod_single(
 		    /*inout*/ val, /*<- val/div*/
 		       /*in*/ div
 		   ) /* -> val%div */ {
-	var rem, quot, tmp, i;
+	var rem, tmp, i;
 
-	if (div < 0 || div >= base)
+	if (div <= 0 || div >= base)
 		return undefined;
 
 	rem = 0;
-	quot = new Array(val.length);
 	for (i = val.length; i --> 0; ) {
 		// compute a word of the divisor
 		tmp = (rem * base + val[i]);
@@ -39,13 +38,11 @@ function mod_single(
 	}
 
 	// truncate trailing zeros
-	quot.length = size_multi(quot);
+	val.length = size_multi(val);
 
 	// return result
 	return rem;
 }
-
-function add_single(multi, single)
 
 // used to convert from strings to numbers
 // ensures: multi * factor + delta = val

@@ -19,11 +19,13 @@ function hmac(hash, key, data) {
 		outer_key[i] = 0x5c;
 	}
 
+	// inner round
 	hash.init();
 	hash.update(inner_key);
 	hash.update(data);
 	inner = hash.finalize();
 
+	// outer round
 	hash.init();
 	hash.update(outer_key);
 	hash.update(inner);
