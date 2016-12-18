@@ -55,6 +55,9 @@ var primes = new Array(
 	// 2048**26 - 165
 	"3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5b",
 	// 2048**27 - 123
-	"1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff85",
+	"1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff85"
 	);
+
+for (var i = 0; i < primes.length; i++)
+	primes[i] = hex_to_num(primes[i]);
 

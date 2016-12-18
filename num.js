@@ -129,7 +129,7 @@ function div_multi(/*inout*/ val /*<- val%div*/,
 {
 	// find highest non-zero word in div
 	var i, j,
-	    val_size = size_multi(div),
+	    val_size = size_multi(val),
 	    div_size = size_multi(div),
 	    quot = new Array();
 
