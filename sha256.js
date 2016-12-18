@@ -22,13 +22,13 @@ function ror32(x, shift) {
 function bytes_to_be32(bytes, words) {
 	var i = 0, j = 0;
 
-	if (block.length % 4)
+	if (bytes.length % 4)
 		return undefined;
 
 	if (!words)
-		words = new Array(Math.floor(block / 4));
+		words = new Array(Math.floor(bytes.length / 4));
 
-	while (j < block.length) {
+	while (j < bytes.length) {
 		words[i]  = (bytes[j++] << 24);
 		words[i] |= (bytes[j++] << 16);
 		words[i] |= (bytes[j++] <<  8);
@@ -60,9 +60,9 @@ function sha256_get_word(words, i) {
 	if (i >= 16)  {
 		var w15 = words[i - 15],
 		    w2  = words[i - 2]
-		words[i] = ((words[i - 16] + s0 + words[i-7] + s1)
-			 + (ror32(w15, 7) ^ ror(w15, 18) ^ ror32(w15, 3))
-			 + (ror32(w2, 17) ^ ror(w2,  19) ^ ror32(w2, 10))) >>> 0;
+		words[i] = ((words[i - 16] + words[i-7])
+			 + (ror32(w15, 7) ^ ror32(w15, 18) ^ ror32(w15, 3))
+			 + (ror32(w2, 17) ^ ror32(w2,  19) ^ ror32(w2, 10))) >>> 0;
 	}
 	return words[i];
 }
@@ -92,11 +92,11 @@ function sha256_compress(hash, words) {
 		h = g;
 	       	g = f;
 	       	f = e;
-	       	e = (d + temp1) >>> 0;
+	       	e = (d + tmp1) >>> 0;
 		d = c;
 		c = b;
 		b = a;
-		a = (temp1 + temp2) >>> 0;
+		a = (tmp1 + tmp2) >>> 0;
 	}
 
 	hash[0] = (hash[0] + a) >>> 0;
@@ -139,8 +139,8 @@ function SHA256() {
 			this.bytes[off++] = bytes[i++];
 			if (off == 64) {
 				off = 0;
-				bytes_to_be32(bytes, words);
-				sha256_compress(this.hash, words);
+				bytes_to_be32(this.bytes, words);
+				sha256_compress(this.state, words);
 			}
 		}
 
@@ -149,7 +149,7 @@ function SHA256() {
 	}
 
 	this.finalize = function () {
-		var off = this.offset;
+		var off = this.offset, words = new Array(64);
 
 		if (this.digest)
 			return this.digest;
@@ -161,23 +161,23 @@ function SHA256() {
 
 		// if we need to, pad some more zeros so we can fit the size
 		if (this.offset > 55) {
-			bytes_to_be32(bytes, words);
-			sha256_compress(this.hash, words);
+			bytes_to_be32(this.bytes, words);
+			sha256_compress(this.state, words);
 
 			off = 0;
 			while (off < 64)
 				this.bytes[off++] = 0;
 		}
 
-		bytes_to_be32(bytes, words);
+		bytes_to_be32(this.bytes, words);
 
 		// write out the number of bits
 		words[62] = Math.floor(this.num_bits / 4294967296);
 		words[63] = this.num_bits >>> 0;
 
-		sha256_compress(this.hash, words);
+		sha256_compress(this.state, words);
 
-		this.digest = be32_to_bytes(this.hash);
+		this.digest = be32_to_bytes(this.state);
 
 		return this.digest;
 	}
