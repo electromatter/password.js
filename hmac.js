@@ -1,3 +1,5 @@
+"use strict"
+
 function hmac(hash, key, data) {
 	var inner_key = new Array(),
 	    outer_key = new Array(),

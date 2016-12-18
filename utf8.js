@@ -1,3 +1,5 @@
+"use strict"
+
 function encode_utf8_codepoint(dest, off, val) {
 	if (val < 0x80) {
 		dest[off++] = val;
