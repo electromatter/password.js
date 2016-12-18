@@ -1,3 +1,5 @@
+"use strict"
+
 // bits per word must be less than half of what the machine
 // is able to represent so carries are preformed correctly
 // this is 20 bits so 20**3 = 60 < 64 (if jit compiled)
