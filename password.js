@@ -73,7 +73,10 @@ function add_point(x, y) {
 	var val = mouse.add_point(x, y);
 	if (false)
 		console.log(val);
-	entropy_outbox.value = mouse.source.entropy;
+	var entropy = mouse.source.entropy;
+	if (csrng.seeded)
+		entropy = '';
+	entropy_outbox.value = entropy;
 }
 
 function random_phrase(size) {
@@ -91,6 +94,7 @@ function random_phrase(size) {
 	// reseed whenever possible
 	// it can't hurt our entropy.
 	csrng.reseed(mouse.finalize());
+	entropy_outbox.value = '';
 	mouse.init();
 
 	var bytes = csrng.random_bytes(num_bytes);
