@@ -26,7 +26,7 @@ function hmac(hash, key, data) {
 	hash.init();
 	hash.update(inner_key);
 	hash.update(data);
-	inner = hash.finalize();
+	var inner = hash.finalize();
 
 	// outer round
 	hash.init();

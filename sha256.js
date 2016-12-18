@@ -189,7 +189,7 @@ function SHA256() {
 }
 
 function hex_bytes(digest) {
-	var i, val = '0x';
+	var i, val = "";
 	for (i = 0; i < digest.length; i++)
 		val += ((digest[i] & 0xff) | 0x100).toString(16).substring(1);
 	return val;
