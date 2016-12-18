@@ -1,7 +1,7 @@
 "use strict"
 
 // A list of the greatest prime less than a power of 2048
-var primes = [
+var primes = new Array(
 	// 2048**1 - 9
 	"0x7f7",
 	// 2048**2 - 3
@@ -56,4 +56,5 @@ var primes = [
 	"0x3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5b",
 	// 2048**27 - 123
 	"0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff85",
-];
+	);
+
