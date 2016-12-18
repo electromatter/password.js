@@ -2,60 +2,8 @@
 <html>
 <head>
 	<title> Words80 </title>
-	<script type="test/javascript">
-
+	<script type="text/javascript">
 "use strict"
-
-/**** utf8.js ****/
-
-function encode_utf8_codepoint(dest, off, val) {
-	if (val < 0x80) {
-		dest[off++] = val;
-		return off;
-	} else if (val < 0x800) {
-		dest[off++] = 0xc0 | ((val >>  6) & 0x1f);
-		dest[off++] = 0x80 |  (val        & 0x3f);
-		return off;
-	} else if (val < 0x10000) {
-		dest[off++] = 0xe0 | ((val >> 12) & 0x0f);
-		dest[off++] = 0x80 | ((val >>  6) & 0x3f);
-		dest[off++] = 0x80 |  (val        & 0x3f);
-		return off;
-	} else if (val < 0x200000) {
-		dest[off++] = 0xf0 | ((val >> 18) & 0x07);
-		dest[off++] = 0x80 | ((val >> 12) & 0x3f);
-		dest[off++] = 0x80 | ((val >>  6) & 0x3f);
-		dest[off++] = 0x80 |  (val        & 0x3f);
-		return off;
-	} else if (val < 0x4000000) {
-		dest[off++] = 0xf8 | ((val >> 24) & 0x03);
-		dest[off++] = 0x80 | ((val >> 18) & 0x3f);
-		dest[off++] = 0x80 | ((val >> 12) & 0x3f);
-		dest[off++] = 0x80 | ((val >>  6) & 0x3f);
-		dest[off++] = 0x80 |  (val       & 0x3f);
-		return off;
-	} else if (val < 0x80000000) {
-		dest[off++] = 0xfc | ((val >> 30) & 0x01);
-		dest[off++] = 0x80 | ((val >> 24) & 0x3f);
-		dest[off++] = 0x80 | ((val >> 18) & 0x3f);
-		dest[off++] = 0x80 | ((val >> 12) & 0x3f);
-		dest[off++] = 0x80 | ((val >>  6) & 0x3f);
-		dest[off++] = 0x80 |  (val       & 0x3f);
-		return off;
-	} else {
-		return undefined;
-	}
-}
-
-function encode_utf8(val) {
-	var i, off, dest;
-	off = 0;
-	dest = new Array(val.length * 3);
-	for (i = 0; i < val.length; i++)
-		off = encode_utf8_codepoint(dest, off, val.charCodeAt(i));
-	dest.length = off;
-	return dest;
-}
 
 /**** num.js ****/
 
@@ -63,7 +11,7 @@ function encode_utf8(val) {
 // is able to represent so carries are preformed correctly
 // this is 20 bits so 20**3 = 60 < 64 (if jit compiled)
 // and 20**2 < 53 (double precision)
-var bits = 20, base = 1 << bits;
+var NUM_BITS = 20, NUM_BASE = 1 << NUM_BITS;
 
 function size_multi(val) {
 	var i = val.length;
@@ -85,13 +33,13 @@ function mod_single(
 		   ) /* -> val%div */ {
 	var rem, tmp, i;
 
-	if (div <= 0 || div >= base)
+	if (div <= 0 || div >= NUM_BASE)
 		return undefined;
 
 	rem = 0;
 	for (i = val.length; i --> 0; ) {
 		// compute a word of the divisor
-		tmp = (rem * base + val[i]);
+		tmp = (rem * NUM_BASE + val[i]);
 		val[i] = Math.floor(tmp / div);
 		rem = tmp % div;
 	}
@@ -113,15 +61,15 @@ function muladd_single(
 {
 	var carry, i, val, tmp;
 
-	if (factor < 0 || delta < 0 || factor >= base || delta >= base)
+	if (factor < 0 || delta < 0 || factor >= NUM_BASE || delta >= NUM_BASE)
 		return undefined;
 
 	// multiply multi and single
 	carry = delta;
 	for (i = 0; i < multi.length; i++) {
 		tmp = multi[i] * factor + carry;
-		carry = Math.floor(tmp / base);
-		multi[i] = tmp % base;
+		carry = Math.floor(tmp / NUM_BASE);
+		multi[i] = tmp % NUM_BASE;
 	}
 
 	// spill over carry
@@ -152,11 +100,11 @@ function div_multi_try(
 	carry = 0;
 	for (i = 0, j = off; i < div_size; i++, j++) {
 		tmp = div[i] * guess + carry;
-		carry = Math.floor(tmp / base);
-		rem[j] -= tmp % base;
+		carry = Math.floor(tmp / NUM_BASE);
+		rem[j] -= tmp % NUM_BASE;
 
 		while (rem[j] < 0) {
-			rem[j] += base;
+			rem[j] += NUM_BASE;
 			carry += 1;
 		}
 	}
@@ -173,8 +121,8 @@ function div_multi_try(
 	carry = 0;
 	for (i = 0, j = off; i < div_size; i++, j++) {
 		rem[j] = rem[i] + div[i] + carry;
-		carry = Math.floor(rem[i] / base);
-		rem[i] %= base;
+		carry = Math.floor(rem[i] / NUM_BASE);
+		rem[i] %= NUM_BASE;
 	}
 
 	return guess - 1;
@@ -217,15 +165,15 @@ function div_multi(/*inout*/ val /*<- val%div*/,
 
 	// word oriented long division
 	var quot_size = val_size - div_size + 1,
-	    div_top = div[div_size - 1] * base + div[div_size - 2],
+	    div_top = div[div_size - 1] * NUM_BASE + div[div_size - 2],
 	    val_top, guess;
 	val[val_size] = 0;
 
 	for (i = quot_size - 1, j = val_size - 1; i >= 0; i--, j--) {
-		// 0 <= val_top < div[div_size - 1] * base
-		// 0 <= guess < base
-		val_top = val[j + 1] * base + val[j];
-		guess = Math.floor((val_top * base) / div_top);
+		// 0 <= val_top < div[div_size - 1] * NUM_BASE
+		// 0 <= guess < NUM_BASE
+		val_top = val[j + 1] * NUM_BASE + val[j];
+		guess = Math.floor((val_top * NUM_BASE) / div_top);
 
 		// compute quot from guess
 		quot[i] = div_multi_try(guess, i, div, div_size, val);
@@ -238,50 +186,13 @@ function div_multi(/*inout*/ val /*<- val%div*/,
 	return quot;
 }
 
-/**** hmac.js ****/
-
-function hmac(hash, key, data) {
-	var inner_key = new Array(),
-	    outer_key = new Array(),
-	    i;
-
-	if (key.length > hash.block_size) {
-		hash.init();
-		hash.update(key);
-		key = hash.finalize();
-	}
-
-	// initialize keys
-	for (i = 0; i < key.length; i++) {
-		inner_key[i] = 0x36 ^ key[i];
-		outer_key[i] = 0x5c ^ key[i];
-	}
-
-	for ( ; i < hash.block_size; i++) {
-		inner_key[i] = 0x36;
-		outer_key[i] = 0x5c;
-	}
-
-	// inner round
-	hash.init();
-	hash.update(inner_key);
-	hash.update(data);
-	var inner = hash.finalize();
-
-	// outer round
-	hash.init();
-	hash.update(outer_key);
-	hash.update(inner);
-	return hash.finalize();
-}
-
 /**** sha256.js ****/
 
-var sha256_initial = new Array(
+var SHA256_INITIAL = new Array(
 	0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 	);
 
-var sha256_constants = new Array(
+var SHA256_CONSTANTS = new Array(
 	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
 	0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
 	0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -339,9 +250,11 @@ function sha256_expand(words) {
 	for (i = 16; i < 64; i++) {
 		var w15 = words[i - 15],
 		    w2  = words[i - 2]
-		words[i] = ((words[i - 16] + words[i - 7])
-			 + (ror32(w15, 7) ^ ror32(w15, 18) ^ (w15 >>> 3))
-			 + (ror32(w2, 17) ^ ror32(w2,  19) ^ (w2 >>> 10))) >>> 0;
+		words[i] = (
+			      (words[i - 16] + words[i - 7])
+			    + (ror32(w15, 7) ^ ror32(w15, 18) ^ (w15 >>> 3))
+			    + (ror32(w2, 17) ^ ror32(w2,  19) ^ (w2 >>> 10))
+			   ) >>> 0;
 	}
 }
 
@@ -360,14 +273,18 @@ function sha256_compress(hash, words) {
 	sha256_expand(words);
 
 	for (i = 0; i < 64; i++) {
-		tmp1 = (h
-		     + (ror32(e, 6) ^ ror32(e, 11) ^ ror32(e, 25))
-		     + ((e & f) ^ ((~e) & g))
-		     + words[i]
-		     + sha256_constants[i]) >>> 0;
+		tmp1 = (
+			    h
+			  + (ror32(e, 6) ^ ror32(e, 11) ^ ror32(e, 25))
+			  + ((e & f) ^ ((~e) & g))
+			  + words[i]
+			  + SHA256_CONSTANTS[i]
+		       ) >>> 0;
 
-		tmp2 = ((ror32(a, 2) ^ ror32(a, 13) ^ ror32(a, 22))
-			+ ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+		tmp2 = (
+			  (ror32(a, 2) ^ ror32(a, 13) ^ ror32(a, 22))
+			+ ((a & b) ^ (a & c) ^ (b & c))
+		       ) >>> 0;
 
 		h = g;
 		g = f;
@@ -389,7 +306,7 @@ function sha256_compress(hash, words) {
 	hash[7] = (hash[7] + h) >>> 0;
 }
 
-function SHA256() {
+function sha256() {
 	this.block_size = 64;
 	this.digest_size = 32;
 
@@ -404,8 +321,8 @@ function SHA256() {
 		this.num_bits = 0;
 		this.offset = 0;
 		this.digest = null;
-		for (i = 0; i < sha256_initial.length; i++)
-			this.state[i] = sha256_initial[i];
+		for (i = 0; i < SHA256_INITIAL.length; i++)
+			this.state[i] = SHA256_INITIAL[i];
 	}
 
 	this.update = function (bytes) {
@@ -465,18 +382,244 @@ function SHA256() {
 	this.init();
 }
 
-function hex_bytes(digest) {
-	var i, val = "";
-	for (i = 0; i < digest.length; i++)
-		val += ((digest[i] & 0xff) | 0x100).toString(16).substring(1);
+/**** hmac.js ****/
+
+function hmac(hash, key, data) {
+	var inner_key = new Array(),
+	    outer_key = new Array(),
+	    i;
+
+	if (key.length > hash.block_size) {
+		hash.init();
+		hash.update(key);
+		key = hash.finalize();
+	}
+
+	// initialize keys
+	for (i = 0; i < key.length; i++) {
+		inner_key[i] = 0x36 ^ key[i];
+		outer_key[i] = 0x5c ^ key[i];
+	}
+
+	for ( ; i < hash.block_size; i++) {
+		inner_key[i] = 0x36;
+		outer_key[i] = 0x5c;
+	}
+
+	// inner round
+	hash.init();
+	hash.update(inner_key);
+	hash.update(data);
+	var inner = hash.finalize();
+
+	// outer round
+	hash.init();
+	hash.update(outer_key);
+	hash.update(inner);
+	return hash.finalize();
+}
+
+/**** util.js ****/
+
+function copy_to(dest, off, src) {
+	var i;
+
+	if (!src)
+		return;
+
+	for (i = 0; i < src.length; i++)
+		dest[off + i] = src[i];
+
+	return dest;
+}
+
+function dupnum(num) {
+	var i, val = new Array(num.length);
+
+	for (i = 0; i < num.length; i++)
+		val[i] = num[i];
+
+	while (i --> 0)
+		if (val[i] > 0)
+			break;
+
+	val.length = i + 1;
+
 	return val;
 }
 
-/**** english.js ****/
+function bytes_to_hex(bytes) {
+	var i, val = ""; 
+	for (i = 0; i < bytes.length; i++)
+		val += ((bytes[i] & 0xff) | 0x100).toString(16).substring(1);
+	return val;
+}
+
+function num_to_hex(num) {
+	var val = "";
+	num = dupnum(num);
+	while (num.length > 0)
+		val = mod_single(num, 0x10).toString(16) + val;
+	return val;
+}
+
+function hex_to_num(hex) {
+	var i, val = new Array();
+	for (i = 0; i < hex.length; i++)
+		val = muladd_single(val, 0x10, parseInt(hex.charAt(i), 16));
+	return val;
+}
+
+function bytes_to_num(bytes) {
+	var i, val = new Array();
+	for (i = 0; i < bytes.length; i++)
+		val = muladd_single(val, 0x100, bytes[i]);
+	return val;
+}
+
+function num_to_words(num, words) {
+	var i = 0, phrase = '';
+
+	if (!words)
+		words = WORDS;
+
+	num = dupnum(num);
+	while (num.length > 0)
+		phrase = words[mod_single(num, words.length)] + ' ' + phrase;
+
+	return phrase;
+}
+
+function encode_utf8_codepoint(dest, off, val) {
+	if (val < 0x80) {
+		dest[off++] = val;
+		return off;
+	} else if (val < 0x800) {
+		dest[off++] = 0xc0 | ((val >>  6) & 0x1f);
+		dest[off++] = 0x80 |  (val        & 0x3f);
+		return off;
+	} else if (val < 0x10000) {
+		dest[off++] = 0xe0 | ((val >> 12) & 0x0f);
+		dest[off++] = 0x80 | ((val >>  6) & 0x3f);
+		dest[off++] = 0x80 |  (val        & 0x3f);
+		return off;
+	} else if (val < 0x200000) {
+		dest[off++] = 0xf0 | ((val >> 18) & 0x07);
+		dest[off++] = 0x80 | ((val >> 12) & 0x3f);
+		dest[off++] = 0x80 | ((val >>  6) & 0x3f);
+		dest[off++] = 0x80 |  (val        & 0x3f);
+		return off;
+	} else if (val < 0x4000000) {
+		dest[off++] = 0xf8 | ((val >> 24) & 0x03);
+		dest[off++] = 0x80 | ((val >> 18) & 0x3f);
+		dest[off++] = 0x80 | ((val >> 12) & 0x3f);
+		dest[off++] = 0x80 | ((val >>  6) & 0x3f);
+		dest[off++] = 0x80 |  (val       & 0x3f);
+		return off;
+	} else if (val < 0x80000000) {
+		dest[off++] = 0xfc | ((val >> 30) & 0x01);
+		dest[off++] = 0x80 | ((val >> 24) & 0x3f);
+		dest[off++] = 0x80 | ((val >> 18) & 0x3f);
+		dest[off++] = 0x80 | ((val >> 12) & 0x3f);
+		dest[off++] = 0x80 | ((val >>  6) & 0x3f);
+		dest[off++] = 0x80 |  (val       & 0x3f);
+		return off;
+	} else {
+		return undefined;
+	}
+}
+
+function encode_utf8(val) {
+	var i, off, dest;
+	off = 0;
+	dest = new Array(val.length * 3);
+	for (i = 0; i < val.length; i++)
+		off = encode_utf8_codepoint(dest, off, val.charCodeAt(i));
+	dest.length = off;
+
+	if (isNaN(off))
+		return undefined;
+
+	return dest;
+}
+
+function sha256_string(str) {
+	var hash = new sha256();
+	hash.update(encode_utf8(str));
+	return bytes_to_hex(hash.finalize());
+}
+
+function hmac_sha256_string(key, msg) {
+	var hash = new sha256();
+	return bytes_to_hex(hmac(hash, encode_utf8(key), encode_utf8(msg)));
+}
+
+/**** CONSTANTS ****/
+
+// A list of the greatest prime less than a power of 2048 (in hexidecimal)
+var PRIMES = new Array(
+	// 2048**1 - 9
+	"7f7",
+	// 2048**2 - 3
+	"3ffffd",
+	// 2048**3 - 9
+	"1fffffff7",
+	// 2048**4 - 17
+	"fffffffffef",
+	// 2048**5 - 55
+	"7fffffffffffc9",
+	// 2048**6 - 5
+	"3fffffffffffffffb",
+	// 2048**7 - 33
+	"1fffffffffffffffffdf",
+	// 2048**8 - 299
+	"fffffffffffffffffffed5",
+	// 2048**9 - 115
+	"7ffffffffffffffffffffff8d",
+	// 2048**10 - 21
+	"3fffffffffffffffffffffffffeb",
+	// 2048**11 - 73
+	"1ffffffffffffffffffffffffffffb7",
+	// 2048**12 - 347
+	"ffffffffffffffffffffffffffffffea5",
+	// 2048**13 - 69
+	"7fffffffffffffffffffffffffffffffffbb",
+	// 2048**14 - 243
+	"3ffffffffffffffffffffffffffffffffffff0d",
+	// 2048**15 - 25
+	"1fffffffffffffffffffffffffffffffffffffffe7",
+	// 2048**16 - 233
+	"ffffffffffffffffffffffffffffffffffffffffff17",
+	// 2048**17 - 85
+	"7ffffffffffffffffffffffffffffffffffffffffffffab",
+	// 2048**18 - 17
+	"3fffffffffffffffffffffffffffffffffffffffffffffffef",
+	// 2048**19 - 33
+	"1ffffffffffffffffffffffffffffffffffffffffffffffffffdf",
+	// 2048**20 - 77
+	"fffffffffffffffffffffffffffffffffffffffffffffffffffffb3",
+	// 2048**21 - 165
+	"7fffffffffffffffffffffffffffffffffffffffffffffffffffffff5b",
+	// 2048**22 - 63
+	"3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc1",
+	// 2048**23 - 273
+	"1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeef",
+	// 2048**24 - 275
+	"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeed",
+	// 2048**25 - 129
+	"7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+	// 2048**26 - 165
+	"3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5b",
+	// 2048**27 - 123
+	"1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff85"
+	);
+
+for (var i = 0; i < PRIMES.length; i++)
+	PRIMES[i] = hex_to_num(PRIMES[i]);
 
 // From the bips-39 wordlist which can also be found at the url:
 // https://github.com/bitcoin/bips/blob/ce1862ac6bcffa1dd20aad858380e51e66e949ea/bip-0039/english.txt
-var words_english = new Array(
+var WORDS = new Array(
 	"abandon",  "ability",  "able",     "about",    "above",    "absent",   "absorb",   "abstract",
 	"absurd",   "abuse",    "access",   "accident", "account",  "accuse",   "achieve",  "acid",
 	"acoustic", "acquire",  "across",   "act",      "action",   "actor",    "actress",  "actual",
@@ -735,151 +878,6 @@ var words_english = new Array(
 	"yellow",   "you",      "young",    "youth",    "zebra",    "zero",     "zone",     "zoo"
 	);
 
-/**** util.js ****/
-
-function copy_to(dest, off, src) {
-	var i;
-
-	if (!src)
-		return;
-
-	for (i = 0; i < src.length; i++)
-		dest[off + i] = src[i];
-
-	return dest;
-}
-
-function dupnum(num) {
-	var i, val = new Array(num.length);
-
-	for (i = 0; i < num.length; i++)
-		val[i] = num[i];
-
-	while (i --> 0)
-		if (val[i] > 0)
-			break;
-
-	val.length = i + 1;
-
-	return val;
-}
-
-function bytes_to_hex(bytes) {
-	var i, val = ""; 
-	for (i = 0; i < bytes.length; i++)
-		val += ((bytes[i] & 0xff) | 0x100).toString(16).substring(1);
-	return val;
-}
-
-function num_to_hex(num) {
-	var val = "";
-	num = dupnum(num);
-	while (num.length > 0)
-		val = mod_single(num, 0x10).toString(16) + val;
-	return val;
-}
-
-function hex_to_num(hex) {
-	var i, val = new Array();
-	for (i = 0; i < hex.length; i++)
-		val = muladd_single(val, 0x10, parseInt(hex.charAt(i), 16));
-	return val;
-}
-
-function bytes_to_num(bytes) {
-	var i, val = new Array();
-	for (i = 0; i < bytes.length; i++)
-		val = muladd_single(val, 0x100, bytes[i]);
-	return val;
-}
-
-function num_to_words(num, words) {
-	var i = 0, phrase = '';
-
-	if (!words)
-		words = words_english;
-
-	num = dupnum(num);
-	while (num.length > 0)
-		phrase = words[mod_single(num, words.length)] + ' ' + phrase;
-
-	return phrase;
-}
-
-function sha256_string(str) {
-	var hash = new SHA256();
-	hash.update(encode_utf8(str));
-	return bytes_to_hex(hash.finalize());
-}
-
-function hmac_sha256_string(key, msg) {
-	var hash = new SHA256();
-	return bytes_to_hex(hmac(hash, encode_utf8(key), encode_utf8(msg)));
-}
-
-/**** primes.js ****/
-
-// A list of the greatest prime less than a power of 2048 (in hexidecimal)
-var primes = new Array(
-	// 2048**1 - 9
-	"7f7",
-	// 2048**2 - 3
-	"3ffffd",
-	// 2048**3 - 9
-	"1fffffff7",
-	// 2048**4 - 17
-	"fffffffffef",
-	// 2048**5 - 55
-	"7fffffffffffc9",
-	// 2048**6 - 5
-	"3fffffffffffffffb",
-	// 2048**7 - 33
-	"1fffffffffffffffffdf",
-	// 2048**8 - 299
-	"fffffffffffffffffffed5",
-	// 2048**9 - 115
-	"7ffffffffffffffffffffff8d",
-	// 2048**10 - 21
-	"3fffffffffffffffffffffffffeb",
-	// 2048**11 - 73
-	"1ffffffffffffffffffffffffffffb7",
-	// 2048**12 - 347
-	"ffffffffffffffffffffffffffffffea5",
-	// 2048**13 - 69
-	"7fffffffffffffffffffffffffffffffffbb",
-	// 2048**14 - 243
-	"3ffffffffffffffffffffffffffffffffffff0d",
-	// 2048**15 - 25
-	"1fffffffffffffffffffffffffffffffffffffffe7",
-	// 2048**16 - 233
-	"ffffffffffffffffffffffffffffffffffffffffff17",
-	// 2048**17 - 85
-	"7ffffffffffffffffffffffffffffffffffffffffffffab",
-	// 2048**18 - 17
-	"3fffffffffffffffffffffffffffffffffffffffffffffffef",
-	// 2048**19 - 33
-	"1ffffffffffffffffffffffffffffffffffffffffffffffffffdf",
-	// 2048**20 - 77
-	"fffffffffffffffffffffffffffffffffffffffffffffffffffffb3",
-	// 2048**21 - 165
-	"7fffffffffffffffffffffffffffffffffffffffffffffffffffffff5b",
-	// 2048**22 - 63
-	"3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc1",
-	// 2048**23 - 273
-	"1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeef",
-	// 2048**24 - 275
-	"fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeed",
-	// 2048**25 - 129
-	"7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
-	// 2048**26 - 165
-	"3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5b",
-	// 2048**27 - 123
-	"1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff85"
-	);
-
-for (var i = 0; i < primes.length; i++)
-	primes[i] = hex_to_num(primes[i]);
-
 	</script>
 
 </head>
@@ -935,13 +933,13 @@ function pick_prime(size) {
 		size = 4;
 	if (size > 24)
 		size = 24;
-	return primes[size - 1];
+	return PRIMES[size - 1];
 }
 
 function gen_phrase(key, name, size, debug) {
 	var hash, num, prime, hmac_bytes;
 
-	hash = new SHA256();
+	hash = new sha256();
 	hmac_bytes = hmac(hash, encode_utf8(key), encode_utf8(name));
 	num = bytes_to_num(hmac_bytes);
 	prime = pick_prime(size);
