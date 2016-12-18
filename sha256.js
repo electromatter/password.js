@@ -19,49 +19,176 @@ function ror32(x, shift) {
 	return (x << (32 - shift)) | (x >>> shift);
 }
 
-function bytes_to_be32_words(words, block) {
+function bytes_to_be32(bytes, words) {
 	var i = 0, j = 0;
 
 	if (block.length % 4)
 		return undefined;
 
+	if (!words)
+		words = new Array(Math.floor(block / 4));
+
 	while (j < block.length) {
-		words[i]  = (block[j++] << 24);
-		words[i] |= (block[j++] << 16);
-		words[i] |= (block[j++] <<  8);
-		words[i] |=  block[j++];
+		words[i]  = (bytes[j++] << 24);
+		words[i] |= (bytes[j++] << 16);
+		words[i] |= (bytes[j++] <<  8);
+		words[i] |=  bytes[j++];
 		i++;
 	}
 
-	words.length = i;
 	return words;
 }
 
+function be32_to_bytes(words, bytes) {
+	var i = 0, j = 0;
+
+	if (!bytes)
+		bytes = new Array(words.length * 4);
+
+	while (i < words.length) {
+		bytes[j++] = (words[i] >>> 24) & 0xff;
+		bytes[j++] = (words[i] >>> 16) & 0xff;
+		bytes[j++] = (words[i] >>> 8 ) & 0xff;
+		bytes[j++] = (words[i])        & 0xff;
+		i++;
+	}
+
+	return bytes;
+}
+
 function sha256_get_word(words, i) {
-	if (i < 16)  {
-		return words[i];
-	} else {
+	if (i >= 16)  {
 		var w15 = words[i - 15],
 		    w2  = words[i - 2]
-		    s0  = ror32(w15, 7) ^ ror(w15, 18) ^ ror32(w15, 3),
-		    s1  = ror32(w2, 17) ^ ror(w2,  19) ^ ror32(w2, 10);
-		return words[i] = words[i - 16] + s0 + words[i-7] + s1;
+		words[i] = ((words[i - 16] + s0 + words[i-7] + s1)
+			 + (ror32(w15, 7) ^ ror(w15, 18) ^ ror32(w15, 3))
+			 + (ror32(w2, 17) ^ ror(w2,  19) ^ ror32(w2, 10))) >>> 0;
 	}
+	return words[i];
 }
 
-function sha256_compress(words) {
+function sha256_compress(hash, words) {
+	var i, tmp1, tmp2;
+
+	var a = hash[0],
+	    b = hash[1],
+	    c = hash[2],
+	    d = hash[3],
+	    e = hash[4],
+	    f = hash[5],
+	    g = hash[6],
+	    h = hash[7];
+
+	for (i = 0; i < 64; i++) {
+		tmp1 = (h
+		     + (ror32(e, 6) ^ ror32(e, 11) ^ ror32(e, 25))
+		     + ((e & f) ^ (~e & g))
+		     + sha256_get_word(words, i)
+		     + sha256_constants[i]) >>> 0;
+
+		tmp2 = ((ror32(a, 2) ^ ror32(a, 13) ^ ror32(a, 22))
+			+ ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
+
+		h = g;
+	       	g = f;
+	       	f = e;
+	       	e = (d + temp1) >>> 0;
+		d = c;
+		c = b;
+		b = a;
+		a = (temp1 + temp2) >>> 0;
+	}
+
+	hash[0] = (hash[0] + a) >>> 0;
+	hash[1] = (hash[1] + b) >>> 0;
+	hash[2] = (hash[2] + c) >>> 0;
+	hash[3] = (hash[3] + d) >>> 0;
+	hash[4] = (hash[4] + e) >>> 0;
+	hash[5] = (hash[5] + f) >>> 0;
+	hash[6] = (hash[6] + g) >>> 0;
+	hash[7] = (hash[7] + h) >>> 0;
 }
 
-function sha256() {
+function SHA256() {
+	this.block_size = 64;
+	this.digest_size = 32;
+
+	this.num_bits = 0;
+	this.offset = 0;
+	this.state = new Array(8);
+	this.bytes = new Array(this.block_size);
+	this.digest = null;
+
 	this.init = function () {
+		var i;
+		this.num_bits = 0;
+		this.offset = 0;
+		this.digest = null;
+		for (i = 0; i < sha256_initial.length; i++)
+			this.state[i] = sha256_initial[i];
 	}
 
 	this.update = function (bytes) {
+		var i = 0, off = this.offset, words = new Array(64);
+
+		if (this.digest)
+			return;
+
+		// process bytes blockwise
+		while (i < bytes.length) {
+			this.bytes[off++] = bytes[i++];
+			if (off == 64) {
+				off = 0;
+				bytes_to_be32(bytes, words);
+				sha256_compress(this.hash, words);
+			}
+		}
+
+		this.offset = off;
+		this.num_bits += bytes.length * 8;
 	}
 
 	this.finalize = function () {
+		var off = this.offset;
+
+		if (this.digest)
+			return this.digest;
+
+		// pad with one bit and zeros up to the nearest block
+		this.bytes[off++] = 0x80;
+		while (off < 64)
+			this.bytes[off++] = 0;
+
+		// if we need to, pad some more zeros so we can fit the size
+		if (this.offset > 55) {
+			bytes_to_be32(bytes, words);
+			sha256_compress(this.hash, words);
+
+			off = 0;
+			while (off < 64)
+				this.bytes[off++] = 0;
+		}
+
+		bytes_to_be32(bytes, words);
+
+		// write out the number of bits
+		words[62] = Math.floor(this.num_bits / 4294967296);
+		words[63] = this.num_bits >>> 0;
+
+		sha256_compress(this.hash, words);
+
+		this.digest = be32_to_bytes(this.hash);
+
+		return this.digest;
 	}
 
 	this.init();
+}
+
+function hex_bytes(digest) {
+	var i, val = '';
+	for (i = 0; i < digest.length; i++)
+		val += ((digest[i] & 0xff) | 0x100).toString(16).substring(1);
+	return val;
 }
 

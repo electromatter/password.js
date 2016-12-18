@@ -1,3 +1,5 @@
+"use strict"
+
 // From the bips-39 wordlist which can also be found at the url:
 // https://github.com/bitcoin/bips/blob/ce1862ac6bcffa1dd20aad858380e51e66e949ea/bip-0039/english.txt
 var words_english = new Array(

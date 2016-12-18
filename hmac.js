@@ -5,8 +5,11 @@ function hmac(hash, key, data) {
 	    outer_key = new Array(),
 	    i;
 
-	if (key.length > hash.block_size)
-		return undefined;
+	if (key.length > hash.block_size) {
+		hash.init();
+		hash.update(key);
+		key = hash.finalize();
+	}
 
 	// initialize keys
 	for (i = 0; i < key.length; i++) {
