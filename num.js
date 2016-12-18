@@ -138,7 +138,7 @@ function div_multi(/*inout*/ val /*<- val%div*/,
 		return quot;
 
 	// revert to single word division
-	if (div_size <= 0) {
+	if (div_size <= 1) {
 		var rem = mod_single(val, div[0]);
 
 		// output quot

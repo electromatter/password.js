@@ -134,7 +134,7 @@ function SHA256() {
 	this.update = function (bytes) {
 		var i = 0, off = this.offset, words = new Array(64);
 
-		if (this.digest)
+		if (this.digest || !bytes)
 			return;
 
 		// process bytes blockwise

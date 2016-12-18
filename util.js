@@ -1,5 +1,17 @@
 "use strict"
 
+function copy_to(dest, off, src) {
+	var i;
+
+	if (!src)
+		return;
+
+	for (i = 0; i < src.length; i++)
+		dest[off + i] = src[i];
+
+	return dest;
+}
+
 function dupnum(num) {
 	var i, val = new Array(num.length);
 
