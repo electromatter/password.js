@@ -60,7 +60,7 @@ function Fortuna(seed) {
 		if (!n || n <= 0)
 			return new Array();
 
-		var bytes = this.random_blocks(Math.floor(n / this.block_size));
+		var bytes = this.random_blocks(Math.ceil(n / this.block_size));
 		bytes.length = n;
 		this.key = this.random_blocks(2);
 		return bytes;
@@ -69,6 +69,4 @@ function Fortuna(seed) {
 	if (seed)
 		this.reseed(seed);
 }
-
-var csrng = new Fortuna();
 

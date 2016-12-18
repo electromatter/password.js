@@ -133,6 +133,10 @@ function div_multi(/*inout*/ val /*<- val%div*/,
 	    div_size = size_multi(div),
 	    quot = new Array();
 
+	// divide by zero!
+	if (div_size == 0)
+		return undefined;
+
 	// val < div so quot=0 and rem=val
 	if (val_size < div_size)
 		return quot;

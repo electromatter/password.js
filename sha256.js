@@ -29,10 +29,10 @@ function bytes_to_be32(bytes, words) {
 		words = new Array(Math.floor(bytes.length / 4));
 
 	while (j < bytes.length) {
-		words[i]  = (bytes[j++] << 24);
-		words[i] |= (bytes[j++] << 16);
-		words[i] |= (bytes[j++] <<  8);
-		words[i] |=  bytes[j++];
+		words[i]  = ((bytes[j++] & 0xff) << 24);
+		words[i] |= ((bytes[j++] & 0xff) << 16);
+		words[i] |= ((bytes[j++] & 0xff) <<  8);
+		words[i] |=  (bytes[j++] & 0xff);
 		words[i] >>>= 0;
 		i++;
 	}
