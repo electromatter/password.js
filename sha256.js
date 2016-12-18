@@ -33,6 +33,7 @@ function bytes_to_be32(bytes, words) {
 		words[i] |= (bytes[j++] << 16);
 		words[i] |= (bytes[j++] <<  8);
 		words[i] |=  bytes[j++];
+		words[i] >>>= 0;
 		i++;
 	}
 
@@ -56,15 +57,15 @@ function be32_to_bytes(words, bytes) {
 	return bytes;
 }
 
-function sha256_get_word(words, i) {
-	if (i >= 16)  {
+function sha256_expand(words) {
+	var i;
+	for (i = 16; i < 64; i++) {
 		var w15 = words[i - 15],
 		    w2  = words[i - 2]
-		words[i] = ((words[i - 16] + words[i-7])
-			 + (ror32(w15, 7) ^ ror32(w15, 18) ^ ror32(w15, 3))
-			 + (ror32(w2, 17) ^ ror32(w2,  19) ^ ror32(w2, 10))) >>> 0;
+		words[i] = ((words[i - 16] + words[i - 7])
+			 + (ror32(w15, 7) ^ ror32(w15, 18) ^ (w15 >>> 3))
+			 + (ror32(w2, 17) ^ ror32(w2,  19) ^ (w2 >>> 10))) >>> 0;
 	}
-	return words[i];
 }
 
 function sha256_compress(hash, words) {
@@ -79,20 +80,22 @@ function sha256_compress(hash, words) {
 	    g = hash[6],
 	    h = hash[7];
 
+	sha256_expand(words);
+
 	for (i = 0; i < 64; i++) {
 		tmp1 = (h
 		     + (ror32(e, 6) ^ ror32(e, 11) ^ ror32(e, 25))
-		     + ((e & f) ^ (~e & g))
-		     + sha256_get_word(words, i)
+		     + ((e & f) ^ ((~e) & g))
+		     + words[i]
 		     + sha256_constants[i]) >>> 0;
 
 		tmp2 = ((ror32(a, 2) ^ ror32(a, 13) ^ ror32(a, 22))
 			+ ((a & b) ^ (a & c) ^ (b & c))) >>> 0;
 
 		h = g;
-	       	g = f;
-	       	f = e;
-	       	e = (d + tmp1) >>> 0;
+		g = f;
+		f = e;
+		e = (d + tmp1) >>> 0;
 		d = c;
 		c = b;
 		b = a;
@@ -160,7 +163,7 @@ function SHA256() {
 			this.bytes[off++] = 0;
 
 		// if we need to, pad some more zeros so we can fit the size
-		if (this.offset > 55) {
+		if (this.offset >= 56) {
 			bytes_to_be32(this.bytes, words);
 			sha256_compress(this.state, words);
 
@@ -172,8 +175,8 @@ function SHA256() {
 		bytes_to_be32(this.bytes, words);
 
 		// write out the number of bits
-		words[62] = Math.floor(this.num_bits / 4294967296);
-		words[63] = this.num_bits >>> 0;
+		words[14] = Math.floor(this.num_bits / 4294967296);
+		words[15] = this.num_bits >>> 0;
 
 		sha256_compress(this.state, words);
 
@@ -186,7 +189,7 @@ function SHA256() {
 }
 
 function hex_bytes(digest) {
-	var i, val = '';
+	var i, val = '0x';
 	for (i = 0; i < digest.length; i++)
 		val += ((digest[i] & 0xff) | 0x100).toString(16).substring(1);
 	return val;
