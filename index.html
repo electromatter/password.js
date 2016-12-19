@@ -3,6 +3,7 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
 	<title> Words55 </title>
+
 	<script type="text/javascript">
 /* <![CDATA[ */
 
@@ -15,6 +16,38 @@ function die(message) {
 	/* platform independant throw */
 	eval('throw message;');
 	(null).abort.here();
+}
+
+function strip(val, space) {
+	if (typeof val !== "string")
+		val = val.toString();
+
+	/* default space */
+	if (space === undefined) {
+		var spaces = new Array(" ", "\t", "\v", "\r", "\n", "\f");
+		for (var i = 0; i < spaces.length; i++)
+			val = space(val, space[i]);
+		return val;
+	}
+
+	var end, i, j,
+	    tok = val.split(space),
+	    result = new Array();
+
+	/* find last non empty token */
+	for (end = tok.length - 1; end >= 0; end--)
+		if (tok[end] != "")
+			break;
+
+	/* skip to the first non-empty token */
+	for (i = 0; i <= end; i++)
+		if (tok[i] != "")
+			break;
+
+	/* join all tok[k] i <= k <= end */
+	for (j = 0; i <= end; i++, j++)
+		result[j++] = tok[i];
+	return result.join(space);
 }
 
 function encode_utf8_codepoint(dest, off, val) {
@@ -319,7 +352,7 @@ BigNat.prototype.toBase = function (base) {
 		return new Array(0);
 
 	/* returns the value in base in big endian order */
-	var i, j,
+	var i,
 	    tmp = new BigNat(this),
 	    result = new Array();
 
@@ -332,12 +365,7 @@ BigNat.prototype.toBase = function (base) {
 	}
 
 	/* convert to big endian */
-	for (j = 0, i = result.length - 1; j < i; j++, i--) {
-		tmp = result[i];
-		result[i] = result[j];
-		result[j] = tmp;
-	}
-
+	result.reverse();
 	return result;
 };
 
@@ -1098,6 +1126,12 @@ function update_form(form) {
 
 /* ]]> */
 	</script>
+
+	<style type="text/css">
+
+/* style */
+
+	</style>
 
 </head>
 <body>
