@@ -1120,10 +1120,30 @@ function hmac_phrase(key, name, prime, words) {
 function update_form(form) {
 	var key = form.master.value,
 	    prime = PRIMES[4];
-	form.amazon.value = hmac_phrase(key, 'amazon', prime);
-	form.custom.value = hmac_phrase(key, form.custom_name.value, prime);
+
+	if (!key) {
+		forms.ref_phrase.value = "";
+		forms.service_phrase.value = "";
+		return;
+	}
+
+	form.ref_phrase.value = hmac_phrase(key, 'reference', prime);
+
+	var service = form.service.value;
+
+	if (service)
+		form.service_phrase.value = hmac_phrase(key, service, prime);
 }
 
+function show_password(form, show) {
+	if (show) {
+		form.master.style.visibility = "hidden";
+		form.master_text.style.visibility = "visible";
+	} else {
+		form.master.style.visibility = "visible";
+		form.master_text.style.visibility = "hidden";
+	}
+}
 /* ]]> */
 	</script>
 
@@ -1136,23 +1156,23 @@ function update_form(form) {
 </head>
 <body>
 	<h1>WARNING: this is highly experimental</h1>
-	<form onsubmit="update_form(this); return false;" action="#" autocapitalize="none">
+	<form onsubmit="return false;" action="#">
 		<div>
-			<label> Key: </label>
-			<input name="master" type="password">
+			<label> Master password </label>
+			<input name="master" type="password" class="master" onchange="this.form.master_text.value = this.value; update_form(this.form);">
+			<input name="master_text" type="text" class="master" style="visibility:hidden;" onchange="this.form.master.value = this.value; update_form(this.form);" autocapitalize="none" autocomplete="off">
+			<label> <input type="checkbox" onchange="show_password(this.form, this.checked);"> show password </label>
 			<input type="submit" value="Generate">
 			<br>
-
-			<label> amazon: </label>
-			<input name="amazon" type="text" readonly>
+			<label> Service name </label>
+			<input name="service" type="text" class="service" onchange="update_form(this.form);">
+			<input name="service_phrase" type="text" class="phrase" readonly>
 			<br>
 
-			<label> Custom: </label>
-			<input name="custom_name" type="text">
-			<input type="submit" value="Generate">
+			<label> reference </label>
+			<input name="ref_phrase" type="text" class="phrase" readonly>
 			<br>
-			<input name="custom" type="text" readonly>
-			<br>
+
 		</div>
 	</form>
 </body>
