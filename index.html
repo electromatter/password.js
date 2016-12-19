@@ -1159,20 +1159,18 @@ function show_password(form, show) {
 	<form onsubmit="return false;" action="#">
 		<div>
 			<label> Master password </label>
-			<input name="master" type="password" class="master" onchange="this.form.master_text.value = this.value; update_form(this.form);">
-			<input name="master_text" type="text" class="master" style="visibility:hidden;" onchange="this.form.master.value = this.value; update_form(this.form);" autocapitalize="none" autocomplete="off">
-			<label> <input type="checkbox" onchange="show_password(this.form, this.checked);"> show password </label>
-			<input type="submit" value="Generate">
+			<input name="master" type="password" tabindex="1" class="master" onchange="this.form.master_text.value = this.value; update_form(this.form);">
+			<input name="master_text" type="text" tabindex="2" class="master" style="visibility:hidden;" onchange="this.form.master.value = this.value; update_form(this.form);" autocapitalize="none" autocomplete="off">
+			<label> <input type="checkbox" tabindex="3" onchange="show_password(this.form, this.checked);"> show password </label>
 			<br>
 			<label> Service name </label>
-			<input name="service" type="text" class="service" onchange="update_form(this.form);">
-			<input name="service_phrase" type="text" class="phrase" readonly>
+			<input name="service" type="text" tabindex="4" class="service" onchange="update_form(this.form);">
+			<input name="service_phrase" type="text" tabindex="5" class="phrase" readonly>
+			<input type="submit" tabindex="6" value="Generate">
 			<br>
-
 			<label> reference </label>
-			<input name="ref_phrase" type="text" class="phrase" readonly>
+			<input name="ref_phrase" type="text" tabindex="7" class="phrase" readonly>
 			<br>
-
 		</div>
 	</form>
 </body>
