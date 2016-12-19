@@ -4,22 +4,24 @@
 	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
 	<title> Words55 </title>
 	<script type="text/javascript">
+/* <![CDATA[ */
+
 "use strict"
 
 function die(message) {
-	// platform dependant emit a message (and possibly a stack trace)
+	/* platform dependant emit a message (and possibly a stack trace) */
 	alert(message);
 
-	// platform independant throw
-	eval('0.synax.error.here???');
+	/* platform independant throw */
+	eval('throw message;');
 	(null).abort.here();
 }
 
 function encode_utf8_codepoint(dest, off, val) {
-	// encode val as a utf8 codepoint
-	// and put it at dest[off...]
-	// return the new offset
-	// return undefined if we encounter an invalid codepoint
+	/* encode val as a utf8 codepoint
+	 * and put it at dest[off...]
+	 * return the new offset
+	 * return undefined if we encounter an invalid codepoint */
 	if (val < 0) {
 		return undefined;
 	} else if (val < 0x80) {
@@ -64,13 +66,13 @@ function encode_utf8(val) {
 	var i, off, dest;
 	off = 0;
 
-	// convert each char
+	/* convert each char */
 	dest = new Array(val.length * 3);
 	for (i = 0; i < val.length; i++)
 		off = encode_utf8_codepoint(dest, off, val.charCodeAt(i));
 	dest.length = off;
 
-	// check if we tried to convert an invalid value
+	/* check if we tried to convert an invalid value */
 	if (isNaN(off))
 		return undefined;
 
@@ -78,40 +80,40 @@ function encode_utf8(val) {
 }
 
 function ensure_bytes(val) {
-	// if val is a string, encode it in utf8
+	/* if val is a string, encode it in utf8 */
 	if (typeof val === 'string')
 		return encode_utf8(val);
 
-	// if val was not an array, then 
+	/* if val was not an array, then  */
 	if (isNaN(val.length))
 		return undefined;
 
-	// val was an array, assume it is ok
+	/* val was an array, assume it is ok */
 	return val;
 }
 
 /**** BigNat - arbitrary length natrual numbers ****/
 
-// bits per word must be less than half of what the machine
-// is able to represent so carries are preformed correctly
-// this is 20 bits so 20**3 = 60 < 64 (if jit compiled)
-// and 20**2 < 53 (double precision)
+/* bits per word must be less than half of what the machine
+ * is able to represent so carries are preformed correctly
+ * this is 20 bits so 20**3 = 60 < 64 (if jit compiled)
+ * and 20**2 < 53 (double precision) */
 var BIGNAT_NUM_BITS = 20, BIGNAT_BASE = 1 << BIGNAT_NUM_BITS;
 
 function size_multi(val) {
 	var i = val.length;
 
-	// try to find the index of the highest non-zero word
+	/* try to find the index of the highest non-zero word */
 	while (i --> 0)
 		if (val[i] > 0)
 			break;
 
-	// size = index of highest non-zero + 1
+	/* size = index of highest non-zero + 1 */
 	return i + 1;
 }
 
-// used to convert numbers to strings
-// ensures: val = quot * div + rem
+/* used to convert numbers to strings */
+/* ensures: val = quot * div + rem */
 function mod_single(
 		    /*inout*/ val, /*<- val/div*/
 		       /*in*/ div
@@ -120,21 +122,21 @@ function mod_single(
 
 	rem = 0;
 	for (i = val.length - 1; i >= 0; i--) {
-		// compute a word of the divisor
+		/* compute a word of the divisor */
 		tmp = (rem * BIGNAT_BASE + val[i]);
 		val[i] = Math.floor(tmp / div);
 		rem = tmp % div;
 	}
 
-	// truncate trailing zeros
+	/* truncate trailing zeros */
 	val.length = size_multi(val);
 
-	// return result
+	/* return result */
 	return rem;
 }
 
-// used to convert from strings to numbers
-// ensures: multi * factor + delta = val
+/* used to convert from strings to numbers
+ * ensures: multi * factor + delta = val */
 function muladd_single(
 		       /*inout*/ multi, /*<- multi*factor+delta*/
 			  /*in*/ factor,
@@ -143,7 +145,7 @@ function muladd_single(
 {
 	var carry, i, val, tmp;
 
-	// multiply multi and single
+	/* multiply multi and single */
 	carry = delta;
 	for (i = 0; i < multi.length; i++) {
 		tmp = multi[i] * factor + carry;
@@ -151,16 +153,16 @@ function muladd_single(
 		multi[i] = tmp % BIGNAT_BASE;
 	}
 
-	// spill over carry
+	/* spill over carry */
 	if (carry > 0)
 		multi[i] = carry;
 
 	return multi;
 }
 
-// computes one step of algorithim d
-// guess must be either correct or one greater than quot
-// precondition off + div_size = rem.length
+/* computes one step of algorithim d
+ * guess must be either correct or one greater than quot
+ * precondition off + div_size = rem.length */
 function div_multi_try(
 		       /*in*/	guess,
 		       /*in*/	off,
@@ -171,11 +173,11 @@ function div_multi_try(
 {
 	var i, j, carry, tmp;
 
-	// guess is zero, so remainder is unchanged.
+	/* guess is zero, so remainder is unchanged. */
 	if (guess == 0)
 		return guess;
 
-	// preform an iteration of long division
+	/* preform an iteration of long division */
 	carry = 0;
 	for (i = 0, j = off; i < div_size; i++, j++) {
 		tmp = div[i] * guess + carry;
@@ -188,15 +190,15 @@ function div_multi_try(
 		}
 	}
 
-	// spill over carry
+	/* spill over carry */
 	rem[j] -= carry;
 
-	// our guess was correct, our reaminder is positive
+	/* our guess was correct, our reaminder is positive */
 	if (rem[j] >= 0)
 		return guess;
 
-	// otherwise, our guess was one too large,
-	// so add one back
+	/* otherwise, our guess was one too large,
+	 * so add one back */
 	carry = 0;
 	for (i = 0, j = off; i < div_size; i++, j++) {
 		rem[j] = rem[i] + div[i] + carry;
@@ -207,58 +209,58 @@ function div_multi_try(
 	return guess - 1;
 }
 
-// used to compute hmac % prime
-// ensures: val = quot * div + rem
+/* used to compute hmac % prime
+ * ensures: val = quot * div + rem */
 function div_multi(/*inout*/ val /*<- val%div*/,
 		      /*in*/ div
 		  ) /* -> val/div */
 {
-	// find highest non-zero word in div
+	/* find highest non-zero word in div */
 	var i, j,
 	    val_size = size_multi(val),
 	    div_size = size_multi(div),
 	    quot = new Array();
 
-	// divide by zero!
+	/* divide by zero! */
 	if (div_size == 0)
 		return undefined;
 
-	// val < div so quot=0 and rem=val
+	/* val < div so quot=0 and rem=val */
 	if (val_size < div_size)
 		return quot;
 
-	// revert to single word division
+	/* revert to single word division */
 	if (div_size <= 1) {
 		var rem = mod_single(val, div[0]);
 
-		// output quot
+		/* output quot */
 		for (i = 0; i < val.length; i++)
 			quot[i] = val[i];
 
-		// output rem
+		/* output rem */
 		val[0] = rem;
 		val.length = rem > 0 ? 1 : 0;
 
 		return quot;
 	}
 
-	// word oriented long division
+	/* word oriented long division */
 	var quot_size = val_size - div_size + 1,
 	    div_top = div[div_size - 1] * BIGNAT_BASE + div[div_size - 2],
 	    val_top, guess;
 	val[val_size] = 0;
 
 	for (i = quot_size - 1, j = val_size - 1; i >= 0; i--, j--) {
-		// 0 <= val_top < div[div_size - 1] * BIGNAT_BASE
-		// 0 <= guess < BIGNAT_BASE
+		/* 0 <= val_top < div[div_size - 1] * BIGNAT_BASE *
+		 * 0 <= guess < BIGNAT_BASE */
 		val_top = val[j + 1] * BIGNAT_BASE + val[j];
 		guess = Math.floor((val_top * BIGNAT_BASE) / div_top);
 
-		// compute quot from guess
+		/* compute quot from guess */
 		quot[i] = div_multi_try(guess, i, div, div_size, val);
 	}
 
-	// truncate
+	/* truncate */
 	quot.length = size_multi(quot);
 	val.length = size_multi(val);
 
@@ -316,12 +318,12 @@ BigNat.prototype.toBase = function (base) {
 	if (!this.nonzero())
 		return new Array(0);
 
-	// returns the value in base in big endian order
+	/* returns the value in base in big endian order */
 	var i, j,
 	    tmp = new BigNat(this),
 	    result = new Array();
 
-	// convert tmp -> result (little endian)
+	/* convert tmp -> result (little endian) */
 	for (i = 0; tmp.nonzero(); i++) {
 		result[i] = tmp.pop_digit(base);
 
@@ -329,7 +331,7 @@ BigNat.prototype.toBase = function (base) {
 			return undefined;
 	}
 
-	// convert to big endian
+	/* convert to big endian */
 	for (j = 0, i = result.length - 1; j < i; j++, i--) {
 		tmp = result[i];
 		result[i] = result[j];
@@ -354,14 +356,14 @@ BigNat.prototype.toString = function (base) {
 }
 
 BigNat.prototype.from_val = function(val, base) {
-	// parse val
-	// val could be:
-	//  - a string like '0x2385014' (hex) or '0123045' (octal) or '345903426' (decimal)
-	//  - a string with base specified
-	//  - a number 0 < x < BIGNAT_BASE
-	//  - an array of bytes
-	//  - an array of numbers with base specified
-	//  - undefined or null or NaN get parsed as zero
+	/* parse val
+	 * val could be:
+	 *  - a string like '0x2385014' (hex) or '0123045' (octal) or '345903426' (decimal)
+	 *  - a string with base specified
+	 *  - a number 0 < x < BIGNAT_BASE
+	 *  - an array of bytes
+	 *  - an array of numbers with base specified
+	 *  - undefined or null or NaN get parsed as zero */
 
 	var val_type = typeof val;
 	if (val.is_bignat) {
@@ -381,7 +383,7 @@ BigNat.prototype.from_val = function(val, base) {
 			}
 		}
 
-		// parse string
+		/* parse string */
 		this.words.length = 0;
 		for (var i = 0; i < val.length; i++)
 			this.push_digit(base, parseInt(val.charAt(i), base));
@@ -389,20 +391,20 @@ BigNat.prototype.from_val = function(val, base) {
 		if (val < 0 || val >= BIGNAT_BASE)
 			val = 0;
 
-		// single word
+		/* single word */
 		this.words[0] = (val >>> 0);
 		this.words.length = 0;
 	} else if (!isNaN(val.length)) {
-		// default to bytes
+		/* default to bytes */
 		if (isNaN(base))
 			base = 256;
 
-		// read each digit
+		/* read each digit */
 		this.words.length = 0;
 		for (var i = 0; i < val.length; i++)
 			this.push_digit(base, val[i]);
 	} else {
-		// must be zero
+		/* must be zero */
 		this.words.length = 0;
 	}
 }
@@ -471,21 +473,21 @@ function be32_to_hex(words) {
 
 	result = new Array(words.length);
 
-	// skip leading zeros
+	/* skip leading zeros */
 	for (i = 0; i < words.length - 1; i++)
 		if (words[i] > 0)
 			break;
 
-	// build up the result
+	/* build up the result */
 	for ( ; i < words.length; i++) {
-		// pad each word to 8 hex characters
+		/* pad each word to 8 hex characters */
 		word = words[i].toString(16);
 		result[i] = padding.substring(0, padding.length - word.length) + word;
 	}
 
 	result = result.join('');
 
-	// truncate leading zeros
+	/* truncate leading zeros */
 	for (i = 0; i < result.length - 1; i++)
 		if (result.charAt(i) != '0')
 			break;
@@ -579,7 +581,7 @@ Sha256_ctx.prototype.init = function () {
 Sha256_ctx.prototype.update = function (data) {
 	var i = 0, off = this.offset, words = new Array(64);
 
-	// digest already computed, ignore extra data
+	/* digest already computed, ignore extra data */
 	if (this.digest)
 		return;
 
@@ -589,11 +591,11 @@ Sha256_ctx.prototype.update = function (data) {
 		return;
 	}
 
-	// process bytes blockwise
+	/* process bytes blockwise */
 	while (i < data.length) {
 		this.bytes[off++] = data[i++];
 
-		// we got a full block, so hash it.
+		/* we got a full block, so hash it. */
 		if (off >= 64) {
 			off = 0;
 			bytes_to_be32(this.bytes, words);
@@ -606,18 +608,18 @@ Sha256_ctx.prototype.update = function (data) {
 }
 
 Sha256_ctx.prototype.finalize = function () {
-	// digest already computed
+	/* digest already computed */
 	if (this.digest)
 		return this.digest;
 
 	var off = this.offset, words = new Array(64);
 
-	// pad with a one bit and zeros up to the nearest block
+	/* pad with a one bit and zeros up to the nearest block */
 	this.bytes[off++] = 0x80;
 	while (off < 64)
 		this.bytes[off++] = 0;
 
-	// if we need to, pad some more zeros so we can fit the size
+	/* if we need to, pad some more zeros so we can fit the size */
 	if (this.offset >= 56) {
 		bytes_to_be32(this.bytes, words);
 		sha256_compress(this.state, words);
@@ -629,29 +631,29 @@ Sha256_ctx.prototype.finalize = function () {
 
 	bytes_to_be32(this.bytes, words);
 
-	// append the number of bits processed total
+	/* append the number of bits processed total */
 	words[14] = Math.floor(this.num_bits / 4294967296);
 	words[15] = this.num_bits >>> 0;
 
-	// hash the final block
+	/* hash the final block */
 	sha256_compress(this.state, words);
 
 	this.digest = be32_to_bytes(this.state);
 	this.hexdigest = be32_to_hex(this.state);
 
-	// return digest as bytes
+	/* return digest as bytes */
 	return this.digest;
 }
 
 function sha256() {
 	var i, hash = new Sha256_ctx();
 
-	// hash the arguments
+	/* hash the arguments */
 	for (i = 0; i < arguments.length; i++)
 		hash.update(arguments[i]);
 	hash.finalize();
 
-	// return the hex digest
+	/* return the hex digest */
 	return hash.hexdigest;
 }
 
@@ -660,8 +662,8 @@ function sha256() {
 function Hmac_ctx(hash_type, key) {
 	this.hash = new hash_type();
 
-	// default to an empty key,
-	// we expect the user to call initin this case
+	/* default to an empty key, */
+	/* we expect the user to call initin this case */
 	if (!key)
 		key = new Array();
 
@@ -676,14 +678,14 @@ Hmac_ctx.prototype.init = function (key) {
 			return;
 		}
 
-		// our key was too long, hash it first
+		/* our key was too long, hash it first */
 		if (key.length > this.hash.block_size) {
 			this.hash.init();
 			this.update(key);
 			key = this.hash.finalize();
 		}
 
-		// initialize the keys
+		/* initialize the keys */
 		this.inner_key = new Array();
 		this.outer_key = new Array();
 
@@ -702,115 +704,115 @@ Hmac_ctx.prototype.init = function (key) {
 	this.digest = null;
 	this.hexdigest = null;
 
-	// start the inner hash
+	/* start the inner hash */
 	this.hash.init();
 	this.hash.update(this.inner_key);
 }
 
 Hmac_ctx.prototype.update = function (data) {
-	// digest some data, harmless if already
-	// finalized, as this.hash will just ignore
-	// the extra data
+	/* digest some data, harmless if already
+	 * finalized, as this.hash will just ignore */
+	 * the extra data */
 	this.hash.update(data);
 }
 
 Hmac_ctx.prototype.finalize = function () {
-	// already finalized, return the digest
+	/* already finalized, return the digest */
 	if (this.digest)
 		return this.hash.digest;
 
 	var inner = this.hash.finalize();
 
-	// compute the outer hmac
+	/* compute the outer hmac */
 	this.hash.init();
 	this.hash.update(this.outer_key);
 	this.hash.update(inner);
 	this.hash.finalize();
 
-	// update the digests
+	/* update the digests */
 	this.digest = this.hash.digest;
 	this.hexdigest = this.hash.hexdigest;
 
-	// return the digest as bytes
+	/* return the digest as bytes */
 	return this.digest;
 }
 
 function hmac_sha256(key) {
-	// setup our hmac context
+	/* setup our hmac context */
 	var i, ctx = new Hmac_ctx(Sha256_ctx, key);
 
-	// compute hmac on the arguments
+	/* compute hmac on the arguments */
 	for (i = 1; i < arguments.length; i++)
 		ctx.update(arguments[i]);
 	ctx.finalize();
 
-	// return the hex string
+	/* return the hex string */
 	return ctx.hexdigest;
 }
 
 /**** CONSTANTS - some useful primes for mixing and the word list ****/
 
-// A list of the greatest prime less than a power of 2048 (in hexidecimal)
+/* A list of the greatest prime less than a power of 2048 (in hexidecimal) */
 var PRIMES = new Array(
-	// 2048**1 - 9
+	/* 2048**1 - 9 */
 	new BigNat("0x7f7"),
-	// 2048**2 - 3
+	/* 2048**2 - 3 */
 	new BigNat("0x3ffffd"),
-	// 2048**3 - 9
+	/* 2048**3 - 9 */
 	new BigNat("0x1fffffff7"),
-	// 2048**4 - 17
+	/* 2048**4 - 17 */
 	new BigNat("0xfffffffffef"),
-	// 2048**5 - 55
+	/* 2048**5 - 55 */
 	new BigNat("0x7fffffffffffc9"),
-	// 2048**6 - 5
+	/* 2048**6 - 5 */
 	new BigNat("0x3fffffffffffffffb"),
-	// 2048**7 - 33
+	/* 2048**7 - 33 */
 	new BigNat("0x1fffffffffffffffffdf"),
-	// 2048**8 - 299
+	/* 2048**8 - 299 */
 	new BigNat("0xfffffffffffffffffffed5"),
-	// 2048**9 - 115
+	/* 2048**9 - 115 */
 	new BigNat("0x7ffffffffffffffffffffff8d"),
-	// 2048**10 - 21
+	/* 2048**10 - 21 */
 	new BigNat("0x3fffffffffffffffffffffffffeb"),
-	// 2048**11 - 73
+	/* 2048**11 - 73 */
 	new BigNat("0x1ffffffffffffffffffffffffffffb7"),
-	// 2048**12 - 347
+	/* 2048**12 - 347 */
 	new BigNat("0xffffffffffffffffffffffffffffffea5"),
-	// 2048**13 - 69
+	/* 2048**13 - 69 */
 	new BigNat("0x7fffffffffffffffffffffffffffffffffbb"),
-	// 2048**14 - 243
+	/* 2048**14 - 243 */
 	new BigNat("0x3ffffffffffffffffffffffffffffffffffff0d"),
-	// 2048**15 - 25
+	/* 2048**15 - 25 */
 	new BigNat("0x1fffffffffffffffffffffffffffffffffffffffe7"),
-	// 2048**16 - 233
+	/* 2048**16 - 233 */
 	new BigNat("0xffffffffffffffffffffffffffffffffffffffffff17"),
-	// 2048**17 - 85
+	/* 2048**17 - 85 */
 	new BigNat("0x7ffffffffffffffffffffffffffffffffffffffffffffab"),
-	// 2048**18 - 17
+	/* 2048**18 - 17 */
 	new BigNat("0x3fffffffffffffffffffffffffffffffffffffffffffffffef"),
-	// 2048**19 - 33
+	/* 2048**19 - 33 */
 	new BigNat("0x1ffffffffffffffffffffffffffffffffffffffffffffffffffdf"),
-	// 2048**20 - 77
+	/* 2048**20 - 77 */
 	new BigNat("0xfffffffffffffffffffffffffffffffffffffffffffffffffffffb3"),
-	// 2048**21 - 165
+	/* 2048**21 - 165 */
 	new BigNat("0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffff5b"),
-	// 2048**22 - 63
+	/* 2048**22 - 63 */
 	new BigNat("0x3ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc1"),
-	// 2048**23 - 273
+	/* 2048**23 - 273 */
 	new BigNat("0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeef"),
-	// 2048**24 - 275
+	/* 2048**24 - 275 */
 	new BigNat("0xfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeed"),
-	// 2048**25 - 129
+	/* 2048**25 - 129 */
 	new BigNat("0x7ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f"),
-	// 2048**26 - 165
+	/* 2048**26 - 165 */
 	new BigNat("0x3fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff5b"),
-	// 2048**27 - 123
+	/* 2048**27 - 123 */
 	new BigNat("0x1ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff85")
 	);
 
-// English wordlist
-// From the bips-39 wordlist which can also be found at the url:
-// https://github.com/bitcoin/bips/blob/ce1862ac6bcffa1dd20aad858380e51e66e949ea/bip-0039/english.txt
+/* English wordlist
+ * From the bips-39 wordlist which can also be found at the url:
+ * https:/*github.com/bitcoin/bips/blob/ce1862ac6bcffa1dd20aad858380e51e66e949ea/bip-0039/english.txt */
 var WORDS = new Array(
 	"abandon",  "ability",  "able",     "about",    "above",    "absent",   "absorb",   "abstract",
 	"absurd",   "abuse",    "access",   "accident", "account",  "accuse",   "achieve",  "acid",
@@ -1094,6 +1096,7 @@ function update_form(form) {
 	form.custom.value = hmac_phrase(key, form.custom_name.value, prime);
 }
 
+/* ]]> */
 	</script>
 
 </head>
