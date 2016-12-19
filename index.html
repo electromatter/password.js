@@ -1087,26 +1087,33 @@ function hmac_phrase(key, name, prime, words) {
 	return phrase.join(' ');
 }
 
+function update_form(form) {
+	var key = form.master.value,
+	    prime = PRIMES[3];
+	form.amazon.value = hmac_phrase(key, 'amazon', prime);
+	form.custom.value = hmac_phrase(key, form.custom_name.value, prime);
+}
+
 	</script>
 
 </head>
 <body>
 	<h1>WARNING: this is highly experimental, DO NOT USE!!!</h1>
-	<form onsubmit="return false;" action="#" autocapitalize="none" autocomplete="off">
+	<form onsubmit="update_form(this); return false;" action="#" autocapitalize="none">
 		<div>
 			<label> Key: </label>
-			<input id="master" type="password">
+			<input name="master" type="password">
 			<input type="submit" value="Generate">
 			<br>
 
 			<label> amazon: </label>
-			<input id="amazon" type="text" readonly>
+			<input name="amazon" type="text" readonly>
 			<br>
 
 			<label> Custom: </label>
-			<input id="name" type="text">
+			<input name="custom_name" type="text">
 			<input type="submit" value="Generate">
-			<input id="phrase" type="text" readonly>
+			<input name="custom" type="text" readonly>
 			<br>
 		</div>
 	</form>
