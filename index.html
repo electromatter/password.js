@@ -298,13 +298,11 @@ BigNat.prototype.pop_digit = function (base) {
 }
 
 BigNat.prototype.reduce_modulo = function (modulus) {
+	if (!modulus)
+		return;
+
 	if (!modulus.is_bignat)
 		modulus = new BigNat(modulus);
-
-	if (!modulus) {
-		die('in reduce_modulo, bad modulus');
-		return;
-	}
 
 	div_multi(this.words, modulus.words);
 }
@@ -749,7 +747,7 @@ function hmac_sha256(key) {
 	return ctx.hexdigest;
 }
 
-/**** CONSTANTS ****/
+/**** CONSTANTS - some useful primes for mixing and the word list ****/
 
 // A list of the greatest prime less than a power of 2048 (in hexidecimal)
 var PRIMES = new Array(
@@ -1071,95 +1069,44 @@ var WORDS = new Array(
 	"yellow",   "you",      "young",    "youth",    "zebra",    "zero",     "zone",     "zoo"
 	);
 
+/* APPLICATION - implementation of hmac_phrase */
+
+function hmac_phrase(key, name, prime, words) {
+	var num = new BigNat(hmac_sha256(key, name), 16);
+	num.reduce_modulo(prime);
+
+	if (!words)
+		words = WORDS;
+
+	var phrase = num.toBase(words.length);
+
+	for (var i = 0; i < phrase.length; i++)
+		phrase[i] = words[phrase[i]];
+
+	return phrase.join(' ');
+}
+
 	</script>
 
 </head>
 <body>
 	<h1>WARNING: this is highly experimental, DO NOT USE!!!</h1>
-	<form onsubmit="update_passwords(); return false;">
-		<label> Key: </label> <input id="master" type="password"> TODO hidden<br>
-		<label> Name: </label> <input id="name" type="text"> <br>
-		<label> Length: </label> <input id="length" type="text" readonly> <input id="length_slider" type="range" value="4" min="1" max="24" onchange="update_prime();" oninput="update_prime();"> <br>
+	<form onsubmit="return false;" action="#">
+		<label> Key: </label>
+		<input id="master" type="password">
 		<input type="submit" value="Generate">
-		<p>
-		<label> SHA256(Key): </label> <input id="out_sha" type="text" readonly> <br>
-		<label> HMAC-SHA256(Key, Name): </label> <input id="out_hmac" type="text" readonly> <br>
-		<label> Prime: </label> <input id="out_prime" type="text" readonly> <br>
-		<label> Residue: </label> <input id="out_residue" type="text" readonly> <br>
-		<label> amazon: </label> <input id="out_amazon" type="text" readonly> <br>
-		<label> Phrase: </label> <input id="out_phrase" type="text" readonly> <br>
+		<br>
+
+		<label> amazon: </label>
+		<input id="amazon" type="text" readonly>
+		<br>
+
+		<label> Custom: </label>
+		<input id="name" type="text">
+		<input type="submit" value="Generate">
+		<input id="phrase" type="text" readonly>
+		<br>
 	</form>
-
-	<script type="text/javascript">
-"use strict"
-
-/*
-var key_inbox = document.getElementById('master'),
-    name_inbox = document.getElementById('name'),
-    length_outbox = document.getElementById('length'),
-    length_slider = document.getElementById('length_slider'),
-    hash_outbox = document.getElementById('out_sha'),
-    hmac_outbox = document.getElementById('out_hmac'),
-    prime_outbox = document.getElementById('out_prime'),
-    residue_outbox = document.getElementById('out_residue'),
-    amazon_outbox = document.getElementById('out_amazon'),
-    phrase_outbox = document.getElementById('out_phrase');
-
-function update_prime() {
-	var size = parseInt(length_slider.value);
-
-	if (typeof size !== 'number')
-		return;
-
-	if (size < 1 || size > 24)
-		return;
-
-	pass_size = size;
-	length_outbox.value = size;
-}
-
-var pass_size;
-update_prime();
-
-function pick_prime(size) {
-	size = Math.floor(size);
-	if (isNaN(size) || size <= 0)
-		size = 4;
-	if (size > 24)
-		size = 24;
-	return PRIMES[size - 1];
-}
-
-function gen_phrase(key, name, size, debug) {
-	var hash, num, prime, hmac_bytes;
-
-	hash = new sha256_ctx();
-	hmac_bytes = hmac(hash, encode_utf8(key), encode_utf8(name));
-	num = bytes_to_num(hmac_bytes);
-	prime = pick_prime(size);
-	div_multi(num, prime);
-
-	if (debug) {
-		prime_outbox.value = num_to_hex(prime);
-		residue_outbox.value = num_to_hex(num);
-	}
-
-	return num_to_words(num);
-}
-
-function show_debug() {
-	hash_outbox.value = sha256_string(key_inbox.value);
-	hmac_outbox.value = hmac_sha256_string(key_inbox.value, name_inbox.value);
-	gen_phrase(key_inbox.value, name_inbox.value, pass_size, true);
-}
-
-function update_passwords() {
-	show_debug();
-	amazon_outbox.value = gen_phrase(key_inbox.value, 'amazon', pass_size);
-	phrase_outbox.value = gen_phrase(key_inbox.value, name_inbox.value, pass_size);
-}
-*/
-	</script>
 </body>
 </html>
 
