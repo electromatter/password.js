@@ -1089,7 +1089,7 @@ function hmac_phrase(key, name, prime, words) {
 
 function update_form(form) {
 	var key = form.master.value,
-	    prime = PRIMES[3];
+	    prime = PRIMES[4];
 	form.amazon.value = hmac_phrase(key, 'amazon', prime);
 	form.custom.value = hmac_phrase(key, form.custom_name.value, prime);
 }
