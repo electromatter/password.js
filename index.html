@@ -1,6 +1,7 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html>
 <head>
+	<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
 	<title> Words80 </title>
 	<script type="text/javascript">
 "use strict"
@@ -1091,21 +1092,23 @@ function hmac_phrase(key, name, prime, words) {
 </head>
 <body>
 	<h1>WARNING: this is highly experimental, DO NOT USE!!!</h1>
-	<form onsubmit="return false;" action="#">
-		<label> Key: </label>
-		<input id="master" type="password">
-		<input type="submit" value="Generate">
-		<br>
+	<form onsubmit="return false;" action="#" autocapitalize="none" autocomplete="off">
+		<div>
+			<label> Key: </label>
+			<input id="master" type="password">
+			<input type="submit" value="Generate">
+			<br>
 
-		<label> amazon: </label>
-		<input id="amazon" type="text" readonly>
-		<br>
+			<label> amazon: </label>
+			<input id="amazon" type="text" readonly>
+			<br>
 
-		<label> Custom: </label>
-		<input id="name" type="text">
-		<input type="submit" value="Generate">
-		<input id="phrase" type="text" readonly>
-		<br>
+			<label> Custom: </label>
+			<input id="name" type="text">
+			<input type="submit" value="Generate">
+			<input id="phrase" type="text" readonly>
+			<br>
+		</div>
 	</form>
 </body>
 </html>
