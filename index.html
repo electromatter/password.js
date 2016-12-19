@@ -6,7 +6,7 @@
 	<script type="text/javascript">
 /* <![CDATA[ */
 
-"use strict"
+"use strict";
 
 function die(message) {
 	/* platform dependant emit a message (and possibly a stack trace) */
@@ -287,7 +287,7 @@ BigNat.prototype.push_digit = function (base, value) {
 	value >>>= 0;
 
 	muladd_single(this.words, base, (value % base) >>> 0);
-}
+};
 
 BigNat.prototype.pop_digit = function (base) {
 	base >>>= 0;
@@ -298,7 +298,7 @@ BigNat.prototype.pop_digit = function (base) {
 	}
 
 	return mod_single(this.words, base);
-}
+};
 
 BigNat.prototype.reduce_modulo = function (modulus) {
 	if (!modulus)
@@ -308,11 +308,11 @@ BigNat.prototype.reduce_modulo = function (modulus) {
 		modulus = new BigNat(modulus);
 
 	div_multi(this.words, modulus.words);
-}
+};
 
 BigNat.prototype.nonzero = function () {
 	return this.words.length > 0;
-}
+};
 
 BigNat.prototype.toBase = function (base) {
 	if (!this.nonzero())
@@ -339,7 +339,7 @@ BigNat.prototype.toBase = function (base) {
 	}
 
 	return result;
-}
+};
 
 BigNat.prototype.toString = function (base) {
 	if (isNaN(base))
@@ -353,7 +353,7 @@ BigNat.prototype.toString = function (base) {
 		tmp[i] = val[i].toString(base);
 
 	return tmp.join('');
-}
+};
 
 BigNat.prototype.from_val = function(val, base) {
 	/* parse val
@@ -407,7 +407,7 @@ BigNat.prototype.from_val = function(val, base) {
 		/* must be zero */
 		this.words.length = 0;
 	}
-}
+};
 
 /**** SHA256 - an implementation of the SHA-2 256 bit hash function ****/
 
@@ -499,7 +499,7 @@ function sha256_expand(words) {
 	var i;
 	for (i = 16; i < 64; i++) {
 		var w15 = words[i - 15],
-		    w2  = words[i - 2]
+		    w2  = words[i - 2];
 		words[i] = (
 			      (words[i - 16] + words[i - 7])
 			    + (ror32(w15, 7) ^ ror32(w15, 18) ^ (w15 >>> 3))
@@ -576,7 +576,7 @@ Sha256_ctx.prototype.init = function () {
 
 	for (i = 0; i < SHA256_INITIAL.length; i++)
 		this.state[i] = SHA256_INITIAL[i];
-}
+};
 
 Sha256_ctx.prototype.update = function (data) {
 	var i = 0, off = this.offset, words = new Array(64);
@@ -605,7 +605,7 @@ Sha256_ctx.prototype.update = function (data) {
 
 	this.offset = off;
 	this.num_bits += data.length * 8;
-}
+};
 
 Sha256_ctx.prototype.finalize = function () {
 	/* digest already computed */
@@ -643,7 +643,7 @@ Sha256_ctx.prototype.finalize = function () {
 
 	/* return digest as bytes */
 	return this.digest;
-}
+};
 
 function sha256() {
 	var i, hash = new Sha256_ctx();
@@ -707,14 +707,14 @@ Hmac_ctx.prototype.init = function (key) {
 	/* start the inner hash */
 	this.hash.init();
 	this.hash.update(this.inner_key);
-}
+};
 
 Hmac_ctx.prototype.update = function (data) {
 	/* digest some data, harmless if already
-	 * finalized, as this.hash will just ignore */
+	 * finalized, as this.hash will just ignore
 	 * the extra data */
 	this.hash.update(data);
-}
+};
 
 Hmac_ctx.prototype.finalize = function () {
 	/* already finalized, return the digest */
@@ -735,7 +735,7 @@ Hmac_ctx.prototype.finalize = function () {
 
 	/* return the digest as bytes */
 	return this.digest;
-}
+};
 
 function hmac_sha256(key) {
 	/* setup our hmac context */
