@@ -26,7 +26,7 @@ function strip(val, space) {
 	if (space === undefined) {
 		var spaces = new Array(" ", "\t", "\v", "\r", "\n", "\f");
 		for (var i = 0; i < spaces.length; i++)
-			val = space(val, space[i]);
+			val = space(val, spaces[i]);
 		return val;
 	}
 
