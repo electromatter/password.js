@@ -675,7 +675,7 @@ Sha256_ctx.prototype.finalize = function () {
 	return this.digest;
 };
 
-function sha256() {
+function sha256(/* ... */) {
 	var i, hash = new Sha256_ctx();
 
 	/* hash the arguments */
@@ -767,7 +767,7 @@ Hmac_ctx.prototype.finalize = function () {
 	return this.digest;
 };
 
-function hmac_sha256(key) {
+function hmac_sha256(key /* ... */) {
 	/* setup our hmac context */
 	var i, ctx = new Hmac_ctx(Sha256_ctx, key);
 
@@ -778,6 +778,38 @@ function hmac_sha256(key) {
 
 	/* return the hex string */
 	return ctx.hexdigest;
+}
+
+/**** PBKDF2 ****/
+
+function pbkdf2_hmac_sha256(rounds, key /* ... */) {
+	var i, j,
+	    hash = new Hmac_ctx(Sha256_ctx, key),
+	    result, round;
+
+	if (isNaN(rounds) || rounds < 1) {
+		die("in pbkdf2_hmac, assert: rounds >= 1");
+		return;
+	}
+
+	/* first round */
+	for (i = 2; i < arguments.length; i++)
+		hash.update(arguments[i]);
+	hash.update(new Array(0, 0, 0, 1));
+
+	/* iterations */
+	result = round = hash.finalize();
+	for (i = 1; i < rounds; i++) {
+		hash.init();
+		hash.update(round);
+		round = hash.finalize();
+
+		for (j = 0; j < result.length; j++)
+			result[j] ^= round[j];
+	}
+
+	/* result */
+	return be32_to_hex(bytes_to_be32(result));
 }
 
 /**** CONSTANTS - some useful primes for mixing and the word list ****/
@@ -1105,7 +1137,8 @@ var WORDS = new Array(
 /* APPLICATION - implementation of hmac_phrase */
 
 function hmac_phrase(key, name, prime, words) {
-	var num = new BigNat(hmac_sha256(key, name), 16);
+	var rounds = 10000,
+	    num = new BigNat(pbkdf2_hmac_sha256(rounds, key, name), 16);
 	num.reduce_modulo(prime);
 
 	if (!words)
@@ -1184,7 +1217,7 @@ function show_password(form, show) {
 
 </head>
 <body>
-	<h1>Words55</h1>
+	<h1>Words55 - WARNING: THIS IS EXPERIMENTAL</h1>
 	<form class="wordsform" onsubmit="return false;" action="#">
 		<p style="part">
 			<label style="display:block;"> Master Password </label>
