@@ -1151,12 +1151,17 @@ function show_password(form, show) {
 
 	<style type="text/css">
 
+.wordsform {
+	position: relative;
+	left: 5ex;
+}
+
 .part {
 	position: relative;
 }
 
 .master {
-	width: 59ex;
+	width: 60ex;
 }
 
 .service {
@@ -1180,7 +1185,7 @@ function show_password(form, show) {
 </head>
 <body>
 	<h1>Words55</h1>
-	<form onsubmit="return false;" action="#">
+	<form class="wordsform" onsubmit="return false;" action="#">
 		<p style="part">
 			<label style="display:block;"> Master Password </label>
 			<input name="master" type="password" tabindex="1" class="master" style="display:inline;" onchange="this.form.master_text.value = this.value; update_form(this.form);">
